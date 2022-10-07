@@ -13,11 +13,11 @@ intScanPix = 10
 intXScanNum = 15
 intYScanNum = 15
 
-intIterationNum = 100
+intIterationNum = 200
 fltAlpha = 0.5
 fltBeta = 0.5
 
-strFileName = "/Users/furunobo/Pictures/toshimab.jpg"
+strFileName = "toshimab.jpg"
 img_int = PIL.Image.open(strFileName)
 img_int = img_int.convert('L')
 img_int = img_int.resize((intObjectNum, intObjectNum), PIL.Image.LANCZOS)
@@ -28,10 +28,12 @@ img_int = np.array(img_int)
 # img_ph = img_ph.convert('L')
 # img_ph = img_ph.resize((intObjectNum, intObjectNum), PIL.Image.LANCZOS)
 
-filename = '/Users/furunobo/Library/CloudStorage/OneDrive-TheUniversityofTokyo/lab_study/fe_xmcd.csv'
+filename = "fe_xmcd.csv"
 aryData = np.loadtxt(filename, delimiter=',', encoding='utf-8-sig')
-energy = aryData[:120:10, 0]
-spcOrig = aryData[:120:10, 1]
+stop = 120
+step = 5
+energy = np.linspace(690, 710, 20) # aryData[:stop:step, 0]
+spcOrig = 1/((energy - 700)**2 + 2) # aryData[:stop:step, 1]
 aryEnergy = np.repeat(energy, intObjectNum**2)
 aryEnergy = aryEnergy.reshape([len(energy), intObjectNum, intObjectNum])
 
@@ -115,7 +117,7 @@ x = x - intProbePix // 2
 r = intProbePix // 10
 aryProbe = np.empty((len(energy), intProbePix, intProbePix), dtype = complex)
 aryProbe[:] = np.copy(aryExpProbe) # np.where(x ** 2 + y ** 2 < r ** 2, 1.0, 0.0)
-
+# np.copy(aryExpProbe) #
 plt.imshow(np.abs(aryProbe[2]))
 plt.title("Probe.")
 plt.show()
@@ -163,7 +165,7 @@ for Iteration1 in range(intIterationNum):
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 1)) + intProbePix // 2, axis = 0)
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 0)) + intProbePix // 2, axis = 1)
 
-    if (Iteration1 + 1) % 100 == 0:
+    if (Iteration1 + 1) % 10 == 0 and Iteration1 > 90:
         spcPty = np.log(np.abs(aryObject)) * aryEnergy / 1.240
         for l in range(intObjectNum):
             for m in range(intObjectNum):
@@ -176,11 +178,11 @@ for Iteration1 in range(intIterationNum):
         # plt.imshow(np.abs(aryObject[0]))
         # plt.show()
 
-# plt.plot(energy, constKKR[:, 150, 150])
-# plt.show()
 end = time.perf_counter()
 elapsed_time = end - start
 print(elapsed_time)
+plt.plot(energy, constKKR[:, 150, 150])
+plt.show()
 # print((aryExpProbe[0, 0] * aryExpObject[aryExpPos[0, 0] + 1, aryExpPos[0, 1] + 1]).__abs__() / noise)
 
 plt.imshow(np.abs(aryObject[0]))
