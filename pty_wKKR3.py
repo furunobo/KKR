@@ -13,7 +13,7 @@ intScanPix = 10
 intXScanNum = 15
 intYScanNum = 15
 
-intIterationNum = 100
+intIterationNum = 300
 fltAlpha = 0.5
 fltBeta = 0.5
 
@@ -51,7 +51,7 @@ def generate_complex_image(image_int, energy_list, spectrum_exp): # 2D to 3D
     hil_img = physical_model(image_tmp, energy_list)
     image_cx = np.empty_like(image_tmp) + 0j
     for i in range(len(energy_list)):
-        image_cx[i] = image_tmp[i] * np.exp(1.0j * (hil_img[i] - 0.01) * 1.240 / energy_list[i])
+        image_cx[i] = image_tmp[i] * np.exp(1.0j * (-hil_img[i] - 0.01) * 1.240 / energy_list[i])
     return image_cx
 
 # img_ph = np.empty((len(energy), intObjectNum, intObjectNum))
@@ -122,11 +122,11 @@ plt.colorbar()
 plt.title("Phase.")
 plt.show()
 
-constKKR = ft.hilbert(np.log(np.abs(img[:, 150, 150])) * energy / 1.240) - (np.angle(img[:, 150, 150]) * energy / 1.240)
+constKKR = -ft.hilbert(np.log(np.abs(img[:, 150, 150])) * energy / 1.240) - (np.angle(img[:, 150, 150]) * energy / 1.240)
 plt.plot(energy, np.angle(img[:, 150, 150]), label = 'arg')
 plt.plot(energy, np.abs(img[:, 150, 150]), label = 'int')
 plt.plot(energy, np.exp(- spcOrig * 0.392), label = 'orig_int')
-plt.plot(energy, ft.hilbert((np.log(np.exp(- spcOrig * 0.392)) * energy / 1.240)) * 1.240 / energy, label = 'orig_arg')
+plt.plot(energy, -ft.hilbert((np.log(np.exp(- spcOrig * 0.392)) * energy / 1.240)) * 1.240 / energy, label = 'orig_arg')
 plt.plot(energy, constKKR, label = 'const')
 plt.legend()
 plt.show()
@@ -191,10 +191,10 @@ for Iteration1 in range(intIterationNum):
         #     for m in range(intObjectNum):
         #         aryHilSpc[:, m, l] = ft.hilbert(spcPty[:, m, l])
         aryHilSpc = physical_model(np.abs(aryObject), energy)
-        constKKR = aryHilSpc - np.angle(aryObject) * aryEnergy / 1.240
+        constKKR = -aryHilSpc - np.angle(aryObject) * aryEnergy / 1.240
         aveKKR = np.average(constKKR, axis=0)
 
-        argObject = (aryHilSpc[:] - aveKKR) * 1.240 / aryEnergy[:]
+        argObject = (-aryHilSpc[:] - aveKKR) * 1.240 / aryEnergy[:]
         plt.imshow(aveKKR)
         plt.show()
         aryObject = np.sqrt(aryObject) * np.exp(1.0j * argObject)
@@ -204,7 +204,7 @@ for Iteration1 in range(intIterationNum):
 end = time.perf_counter()
 elapsed_time = end - start
 print(elapsed_time)
-plt.plot(energy, constKKR[:, 150, 150])
+plt.plot(energy, constKKR[:, 130, 150])
 plt.show()
 # print((aryExpProbe[0, 0] * aryExpObject[aryExpPos[0, 0] + 1, aryExpPos[0, 1] + 1]).__abs__() / noise)
 
