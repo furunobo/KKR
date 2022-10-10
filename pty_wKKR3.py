@@ -13,7 +13,7 @@ intScanPix = 10
 intXScanNum = 15
 intYScanNum = 15
 
-intIterationNum = 300
+intIterationNum = 100
 fltAlpha = 0.5
 fltBeta = 0.5
 
@@ -74,6 +74,7 @@ img_int = img_int / np.max(img_int)
 
 listExpImg = []
 img = generate_complex_image(img_int, energy, spcOrig)
+img[:, 145:155, 145:155] = 1.0 + 0j
 for i in range(len(energy)):
 
     # img_int = img_int / np.max(img_int)
@@ -185,7 +186,7 @@ for Iteration1 in range(intIterationNum):
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 1)) + intProbePix // 2, axis = 0)
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 0)) + intProbePix // 2, axis = 1)
 
-    if (Iteration1 + 1) % 100 == 0: #and Iteration1 > 90:
+    if (Iteration1 + 1) % 100 == 0 and Iteration1 > 90:
         # spcPty = np.log(np.abs(aryObject)) * aryEnergy / 1.240
         # for l in range(intObjectNum):
         #     for m in range(intObjectNum):
