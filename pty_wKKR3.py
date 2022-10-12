@@ -8,12 +8,12 @@ import time
 start = time.perf_counter()
 
 intObjectNum = 300
-intProbePix = 100
+intProbePix = 64
 intScanPix = 10
 intXScanNum = 15
 intYScanNum = 15
 
-intIterationNum = 100
+intIterationNum = 1000
 fltAlpha = 0.5
 fltBeta = 0.5
 
@@ -22,11 +22,6 @@ img_int = PIL.Image.open(strFileName)
 img_int = img_int.convert('L')
 img_int = img_int.resize((intObjectNum, intObjectNum), PIL.Image.LANCZOS)
 img_int = np.array(img_int)
-
-# strFileName = "/Users/furunobo/Pictures/ikemen6.jpg"
-# img_ph = PIL.Image.open(strFileName)
-# img_ph = img_ph.convert('L')
-# img_ph = img_ph.resize((intObjectNum, intObjectNum), PIL.Image.LANCZOS)
 
 filename = "fe_xmcd.csv"
 aryData = np.loadtxt(filename, delimiter=',', encoding='utf-8-sig')
@@ -66,15 +61,15 @@ def generate_complex_image(image_int, energy_list, spectrum_exp): # 2D to 3D
 img_int = img_int / np.max(img_int)
 # img_ph = generate_phase_image(img_int, energy, spcOrig)
 
-# plt.plot(energy, img_ph[:, 150, 150])
-# plt.imshow(np.abs(img_ph[0]))
-# plt.colorbar()
-# plt.title("Phase")
-# plt.show()
-
 listExpImg = []
 img = generate_complex_image(img_int, energy, spcOrig)
-img[:, 145:155, 145:155] = 1.0 + 0j
+
+plt.plot(energy, np.angle(img[:, 130, 130]))
+plt.title("Phase")
+plt.show()
+# vac_pix = 5
+# vac_area = (intObjectNum//2 - vac_pix, intObjectNum//2 + vac_pix)
+# img[:, vac_area[0]:vac_area[1], vac_area[0]:vac_area[1]] = 1.0 + 0j
 for i in range(len(energy)):
 
     # img_int = img_int / np.max(img_int)
@@ -88,7 +83,7 @@ for i in range(len(energy)):
     x -= intProbePix // 2
     r = intProbePix // 20
 
-    aryCircle = np.where(x ** 2 + y ** 2 < r ** 2, 1.0, 0.0)
+    aryCircle = np.where(x ** 2 + y ** 2 <= r ** 2, 1.0, 0.0)
     aryExpProbe = np.fft.ifftshift(np.fft.fft2(aryCircle))
 
     aryExpPos = np.empty(shape = [intXScanNum * intYScanNum, 2], dtype = int)
@@ -109,25 +104,25 @@ for i in range(len(energy)):
             aryExpProbe * aryExpObject[
                 aryExpPos[k, 0]:aryExpPos[k, 0] + intProbePix, 
                 aryExpPos[k, 1]:aryExpPos[k, 1] + intProbePix]
-        ) #+ noise
+        ) + noise
         listExpDiffraction[k] = np.abs(sub) ** 2
     
     listExpImg.append(listExpDiffraction)
 
-plt.imshow(np.abs(aryExpObject))
-plt.colorbar()
-plt.title("Object.")
-plt.show()
-plt.imshow(np.angle(aryExpObject))
-plt.colorbar()
-plt.title("Phase.")
-plt.show()
+# plt.imshow(np.abs(aryExpObject))
+# plt.colorbar()
+# plt.title("Object.")
+# plt.show()
+# plt.imshow(np.angle(aryExpObject))
+# plt.colorbar()
+# plt.title("Phase.")
+# plt.show()
 
-constKKR = -ft.hilbert(np.log(np.abs(img[:, 150, 150])) * energy / 1.240) - (np.angle(img[:, 150, 150]) * energy / 1.240)
-plt.plot(energy, np.angle(img[:, 150, 150]), label = 'arg')
-plt.plot(energy, np.abs(img[:, 150, 150]), label = 'int')
-plt.plot(energy, np.exp(- spcOrig * 0.392), label = 'orig_int')
-plt.plot(energy, -ft.hilbert((np.log(np.exp(- spcOrig * 0.392)) * energy / 1.240)) * 1.240 / energy, label = 'orig_arg')
+constKKR = -ft.hilbert(np.log(np.abs(img[:, 130, 130])) * energy / 1.240) - (np.angle(img[:, 130, 130]) * energy / 1.240)
+plt.plot(energy, np.angle(img[:, 130, 130]), label = 'arg')
+plt.plot(energy, np.abs(img[:, 130, 130]), label = 'int')
+plt.plot(energy, np.exp(- spcOrig * img_int[130, 130]), label = 'orig_int')
+plt.plot(energy, -ft.hilbert((np.log(np.exp(- spcOrig * img_int[130, 130])) * energy / 1.240)) * 1.240 / energy, label = 'orig_arg')
 plt.plot(energy, constKKR, label = 'const')
 plt.legend()
 plt.show()
@@ -182,22 +177,26 @@ for Iteration1 in range(intIterationNum):
                 aryExpPos[iSamplePos, 1] : aryExpPos[iSamplePos, 1] + intProbePix
             ] = aryObjectBefore + fltAlpha * np.conjugate(aryProbeBefore) / np.max(np.abs(aryProbeBefore)) ** 2 * (aryExitWave - aryExitWaveBefore)
 
+            # aryObject[energyi, vac_area[0]:vac_area[1], vac_area[0]:vac_area[1]] = 1.0 + 0j
+
         if (Iteration1 + 1) % 10 == 0:
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 1)) + intProbePix // 2, axis = 0)
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 0)) + intProbePix // 2, axis = 1)
 
-    if (Iteration1 + 1) % 100 == 0 and Iteration1 > 90:
+    if (Iteration1 + 1) % 100 == 0: #and Iteration1 > 90:
         # spcPty = np.log(np.abs(aryObject)) * aryEnergy / 1.240
         # for l in range(intObjectNum):
         #     for m in range(intObjectNum):
         #         aryHilSpc[:, m, l] = ft.hilbert(spcPty[:, m, l])
         aryHilSpc = physical_model(np.abs(aryObject), energy)
         constKKR = -aryHilSpc - np.angle(aryObject) * aryEnergy / 1.240
-        aveKKR = np.average(constKKR, axis=0)
+        aveKKR = np.average(constKKR[:, aryExpPos[0, 0]:aryExpPos[-1, 0]+intProbePix, aryExpPos[0, 1]:aryExpPos[-1, 1]+intProbePix], axis=0)
 
+        aveKKR = np.pad(aveKKR, [aryExpPos[0, 0], aryExpPos[0, 0]], "constant")
         argObject = (-aryHilSpc[:] - aveKKR) * 1.240 / aryEnergy[:]
-        plt.imshow(aveKKR)
-        plt.show()
+        # plt.imshow(aveKKR)
+        # plt.colorbar()
+        # plt.show()
         aryObject = np.sqrt(aryObject) * np.exp(1.0j * argObject)
         # plt.imshow(np.abs(aryObject[0]))
         # plt.show()
@@ -205,19 +204,19 @@ for Iteration1 in range(intIterationNum):
 end = time.perf_counter()
 elapsed_time = end - start
 print(elapsed_time)
-plt.plot(energy, constKKR[:, 130, 150])
+plt.plot(energy, constKKR[:, 130, 130])
 plt.show()
 # print((aryExpProbe[0, 0] * aryExpObject[aryExpPos[0, 0] + 1, aryExpPos[0, 1] + 1]).__abs__() / noise)
 
-plt.imshow(np.abs(aryObject[0]))
+plt.imshow(np.abs(aryObject[3]))
 plt.colorbar()
 plt.title("Object.")
 plt.show()
-plt.imshow(np.angle(aryObject[0]))
+plt.imshow(np.angle(aryObject[3]))
 plt.colorbar()
 plt.title("Phase.")
 plt.show()
-plt.imshow(np.abs(aryProbe[0]))
+plt.imshow(np.abs(aryProbe[3]))
 plt.title("Probe.")
 plt.show()
 
