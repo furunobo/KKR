@@ -7,7 +7,7 @@ import time
 start = time.perf_counter()
 
 intObjectNum = 300
-intProbePix = 63
+intProbePix = 64
 intScanPix = 10
 intXScanNum = 15
 intYScanNum = 15
@@ -52,7 +52,7 @@ y -= intProbePix // 2
 x -= intProbePix // 2
 r = intProbePix // 20
 
-aryCircle = np.where(x ** 2 + y ** 2 < r ** 2, 1.0, 0.0)
+aryCircle = np.where(x ** 2 + y ** 2 <= r ** 2, 1.0, 0.0)
 aryExpProbe = np.fft.ifftshift(np.fft.fft2(aryCircle))
 
 aryExpPos = np.empty(shape = [intXScanNum * intYScanNum, 2], dtype = int)
@@ -101,7 +101,7 @@ for Iteration1 in range(intIterationNum):
         aryObjectBefore = np.copy(
             aryObject[
                 aryExpPos[iSamplePos, 0] : aryExpPos[iSamplePos, 0] + intProbePix,
-                aryExpPos[iSamplePos, 1] : aryExpPos[iSamplePos, 1] + intProbePix,
+                aryExpPos[iSamplePos, 1] : aryExpPos[iSamplePos, 1] + intProbePix
             ]
         )
         aryProbeBefore = np.copy(aryProbe)

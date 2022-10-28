@@ -46,7 +46,7 @@ def generate_complex_image(image_int, energy_list, spectrum_exp): # 2D to 3D
     hil_img = physical_model(image_tmp, energy_list)
     image_cx = np.empty_like(image_tmp) + 0j
     for i in range(len(energy_list)):
-        image_cx[i] = image_tmp[i] * np.exp(1.0j * (-hil_img[i] - 0.01) * 1.240 / energy_list[i])
+        image_cx[i] = image_tmp[i] * np.exp(1.0j * (-hil_img[i] - 0.0000001) * 1.240 / energy_list[i])
     return image_cx
 
 # img_ph = np.empty((len(energy), intObjectNum, intObjectNum))
@@ -67,9 +67,9 @@ img = generate_complex_image(img_int, energy, spcOrig)
 plt.plot(energy, np.angle(img[:, 130, 130]))
 plt.title("Phase")
 plt.show()
-# vac_pix = 5
-# vac_area = (intObjectNum//2 - vac_pix, intObjectNum//2 + vac_pix)
-# img[:, vac_area[0]:vac_area[1], vac_area[0]:vac_area[1]] = 1.0 + 0j
+vac_pix = 5
+vac_area = (intObjectNum//2 - vac_pix, intObjectNum//2 + vac_pix)
+img[:, vac_area[0]:vac_area[1], vac_area[0]:vac_area[1]] = 1.0 + 0j
 for i in range(len(energy)):
 
     # img_int = img_int / np.max(img_int)
@@ -104,26 +104,26 @@ for i in range(len(energy)):
             aryExpProbe * aryExpObject[
                 aryExpPos[k, 0]:aryExpPos[k, 0] + intProbePix, 
                 aryExpPos[k, 1]:aryExpPos[k, 1] + intProbePix]
-        ) + noise
+        ) #+ noise
         listExpDiffraction[k] = np.abs(sub) ** 2
     
     listExpImg.append(listExpDiffraction)
 
-# plt.imshow(np.abs(aryExpObject))
-# plt.colorbar()
-# plt.title("Object.")
-# plt.show()
-# plt.imshow(np.angle(aryExpObject))
-# plt.colorbar()
-# plt.title("Phase.")
-# plt.show()
+plt.imshow(np.abs(aryExpObject))
+plt.colorbar()
+plt.title("Object.")
+plt.show()
+plt.imshow(np.angle(aryExpObject))
+plt.colorbar()
+plt.title("Phase.")
+plt.show()
 
-constKKR = -ft.hilbert(np.log(np.abs(img[:, 130, 130])) * energy / 1.240) - (np.angle(img[:, 130, 130]) * energy / 1.240)
+const_KKR = -ft.hilbert(np.log(np.abs(img[:, 130, 130])) * energy / 1.240) - (np.angle(img[:, 130, 130]) * energy / 1.240)
 plt.plot(energy, np.angle(img[:, 130, 130]), label = 'arg')
 plt.plot(energy, np.abs(img[:, 130, 130]), label = 'int')
 plt.plot(energy, np.exp(- spcOrig * img_int[130, 130]), label = 'orig_int')
 plt.plot(energy, -ft.hilbert((np.log(np.exp(- spcOrig * img_int[130, 130])) * energy / 1.240)) * 1.240 / energy, label = 'orig_arg')
-plt.plot(energy, constKKR, label = 'const')
+plt.plot(energy, const_KKR, label = 'const')
 plt.legend()
 plt.show()
 
@@ -148,6 +148,9 @@ aryHilSpc = np.empty((len(energy), intObjectNum, intObjectNum))
 
 intIterationSamplePos = aryExpPos.shape[0]
 
+listconst = []
+listHil = []
+listArg = []
 for Iteration1 in range(intIterationNum):
     print(Iteration1)
     for energyi in range(len(energy)):
@@ -179,6 +182,8 @@ for Iteration1 in range(intIterationNum):
 
             # aryObject[energyi, vac_area[0]:vac_area[1], vac_area[0]:vac_area[1]] = 1.0 + 0j
 
+        # aryObject = aryObject / np.max(np.real(aryObject))
+
         if (Iteration1 + 1) % 10 == 0:
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 1)) + intProbePix // 2, axis = 0)
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 0)) + intProbePix // 2, axis = 1)
@@ -189,14 +194,18 @@ for Iteration1 in range(intIterationNum):
         #     for m in range(intObjectNum):
         #         aryHilSpc[:, m, l] = ft.hilbert(spcPty[:, m, l])
         aryHilSpc = physical_model(np.abs(aryObject), energy)
-        constKKR = -aryHilSpc - np.angle(aryObject) * aryEnergy / 1.240
+        argBefore = np.angle(aryObject) * aryEnergy / 1.240
+        listHil.append(aryHilSpc[:, 130, 130])
+        listArg.append(argBefore[:, 130, 130])
+        constKKR = -aryHilSpc - argBefore
+        listconst.append(constKKR[:, 130, 130])
         aveKKR = np.average(constKKR[:, aryExpPos[0, 0]:aryExpPos[-1, 0]+intProbePix, aryExpPos[0, 1]:aryExpPos[-1, 1]+intProbePix], axis=0)
 
         aveKKR = np.pad(aveKKR, [aryExpPos[0, 0], aryExpPos[0, 0]], "constant")
         argObject = (-aryHilSpc[:] - aveKKR) * 1.240 / aryEnergy[:]
-        # plt.imshow(aveKKR)
-        # plt.colorbar()
-        # plt.show()
+        plt.imshow(aveKKR)
+        plt.colorbar()
+        plt.show()
         aryObject = np.sqrt(aryObject) * np.exp(1.0j * argObject)
         # plt.imshow(np.abs(aryObject[0]))
         # plt.show()
@@ -204,19 +213,53 @@ for Iteration1 in range(intIterationNum):
 end = time.perf_counter()
 elapsed_time = end - start
 print(elapsed_time)
-plt.plot(energy, constKKR[:, 130, 130])
+print(len(listconst))
+for i in range(len(listHil)):
+    plt.plot(energy, listHil[i], label=i.__str__())
+plt.legend()
 plt.show()
+for i in range(len(listArg)):
+    plt.plot(energy, listArg[i], label=i.__str__())
+plt.legend()
+plt.show()
+for i in range(len(listconst)):
+    plt.plot(energy, listconst[i], label=i.__str__())
+plt.legend()
+plt.show()
+# plt.plot(energy, constKKR[:, 130, 130], label='const')
+# plt.plot(energy, aryHilSpc[:, 130, 130], label='hilbert')
+# plt.plot(energy, argBefore[:, 130, 130], label='arg')
+# plt.legend()
+# plt.show()
 # print((aryExpProbe[0, 0] * aryExpObject[aryExpPos[0, 0] + 1, aryExpPos[0, 1] + 1]).__abs__() / noise)
 
-plt.imshow(np.abs(aryObject[3]))
+# for i in range(len(energy)):
+#     fig = plt.figure(dpi=250, figsize=(14,4))
+
+#     ax1 = fig.add_subplot(1, 3, 1)
+#     ax1.set_title('object')
+#     ax2 = fig.add_subplot(1, 3, 2)
+#     ax2.set_title('phase')
+#     ax3 = fig.add_subplot(1, 3, 3)
+#     ax3.set_title('probe')
+#     im1 = ax1.imshow(np.abs(aryObject[i]))
+#     im2 = ax2.imshow(np.angle(aryObject[i]))
+#     im3 = ax3.imshow(np.abs(aryProbe[i]))
+#     fig.colorbar(im1, ax=ax1)
+#     fig.colorbar(im2, ax=ax2)
+#     fig.colorbar(im3, ax=ax3)
+#     fig.tight_layout()
+#     fig.savefig(i.__str__() + ".jpg", dpi=250)
+
+plt.imshow(np.abs(aryObject[0]))
 plt.colorbar()
 plt.title("Object.")
 plt.show()
-plt.imshow(np.angle(aryObject[3]))
+plt.imshow(np.angle(aryObject[0]))
 plt.colorbar()
 plt.title("Phase.")
 plt.show()
-plt.imshow(np.abs(aryProbe[3]))
+plt.imshow(np.abs(aryProbe[0]))
 plt.title("Probe.")
 plt.show()
 
