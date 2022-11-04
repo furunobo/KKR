@@ -187,6 +187,11 @@ for Iteration1 in range(intIterationNum):
         if (Iteration1 + 1) % 10 == 0:
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 1)) + intProbePix // 2, axis = 0)
             aryProbe[energyi] = np.roll(aryProbe[energyi], -np.argmax(np.sum(np.abs(aryProbe[energyi]), axis = 0)) + intProbePix // 2, axis = 1)
+    # if (Iteration1 + 1) % 10 == 0 and (Iteration1 + 1) > 300 and (Iteration1 + 1) <= 400:
+    #     aryHilSpc = physical_model(np.abs(aryObject), energy)
+    #     argBefore = np.angle(aryObject) * aryEnergy / 1.240
+    #     constKKR = -aryHilSpc - argBefore
+    #     listconst.append(constKKR[:, 130, 130])
 
     if (Iteration1 + 1) % 100 == 0: #and Iteration1 > 90:
         # spcPty = np.log(np.abs(aryObject)) * aryEnergy / 1.240
@@ -195,17 +200,17 @@ for Iteration1 in range(intIterationNum):
         #         aryHilSpc[:, m, l] = ft.hilbert(spcPty[:, m, l])
         aryHilSpc = physical_model(np.abs(aryObject), energy)
         argBefore = np.angle(aryObject) * aryEnergy / 1.240
-        listHil.append(aryHilSpc[:, 130, 130])
-        listArg.append(argBefore[:, 130, 130])
+        # listHil.append(aryHilSpc[:, 130, 130])
+        # listArg.append(argBefore[:, 130, 130])
         constKKR = -aryHilSpc - argBefore
-        listconst.append(constKKR[:, 130, 130])
-        aveKKR = np.average(constKKR[:, aryExpPos[0, 0]:aryExpPos[-1, 0]+intProbePix, aryExpPos[0, 1]:aryExpPos[-1, 1]+intProbePix], axis=0)
+        # listconst.append(constKKR[:, 130, 130])
+        aveKKR = np.average(constKKR, axis=0) # [:, aryExpPos[0, 0]:aryExpPos[-1, 0]+intProbePix, aryExpPos[0, 1]:aryExpPos[-1, 1]+intProbePix]
 
-        aveKKR = np.pad(aveKKR, [aryExpPos[0, 0], aryExpPos[0, 0]], "constant")
+        # aveKKR = np.pad(aveKKR, [aryExpPos[0, 0], aryExpPos[0, 0]], "constant")
         argObject = (-aryHilSpc[:] - aveKKR) * 1.240 / aryEnergy[:]
-        plt.imshow(aveKKR)
-        plt.colorbar()
-        plt.show()
+        # plt.imshow(aveKKR)
+        # plt.colorbar()
+        # plt.show()
         aryObject = np.sqrt(aryObject) * np.exp(1.0j * argObject)
         # plt.imshow(np.abs(aryObject[0]))
         # plt.show()
@@ -214,14 +219,14 @@ end = time.perf_counter()
 elapsed_time = end - start
 print(elapsed_time)
 print(len(listconst))
-for i in range(len(listHil)):
-    plt.plot(energy, listHil[i], label=i.__str__())
-plt.legend()
-plt.show()
-for i in range(len(listArg)):
-    plt.plot(energy, listArg[i], label=i.__str__())
-plt.legend()
-plt.show()
+# for i in range(len(listHil)):
+#     plt.plot(energy, listHil[i], label=i.__str__())
+# plt.legend()
+# plt.show()
+# for i in range(len(listArg)):
+#     plt.plot(energy, listArg[i], label=i.__str__())
+# plt.legend()
+# plt.show()
 for i in range(len(listconst)):
     plt.plot(energy, listconst[i], label=i.__str__())
 plt.legend()
